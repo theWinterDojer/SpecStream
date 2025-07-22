@@ -1,6 +1,6 @@
 # SpecStream 📺
 
-A simple Android TV application that provides access to Spectrum TV streaming. 
+Android TV application that provides access to Spectrum TV streaming in a simple WebView Wrapper.
 
 ## Features
 
