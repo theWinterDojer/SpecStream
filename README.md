@@ -4,11 +4,10 @@ A simple Android TV application that provides access to Spectrum TV streaming.
 
 ## Features
 
-**Android TV Optimized** - Built specifically for TV devices and remote controls  
-**Dual WebView Architecture** - Smooth video playback with overlay guide system  
-**D-pad Navigation** - Complete support for TV remote controls  
-**Channel Guide** - Full program guide with direct channel navigation  
-**Hardware Accelerated** - Enhanced playback on Android TV devices  
+**Android TV Optimized** - Built specifically for TV devices with D-pad controls  
+**Dual WebView Architecture** - Smooth video playback with overlay guide system   
+**Channel Guide** - Access to full program guide with direct channel navigation  
+**Hardware Accelerated** - Enhanced playback on Android TV devices
 
 ## Requirements
 
@@ -18,9 +17,9 @@ A simple Android TV application that provides access to Spectrum TV streaming.
 
 ## Installation
 
-### Option 1: Download APK (Recommended)
+### Option 1: Download APK 
 
-1. **Download the latest APK** from the [Releases](https://github.com/YOUR_USERNAME/SpecStream/releases) section
+1. **Download the latest APK** from the [Releases](https://github.com/YOUR_USERNAME/SpecStream/releases/latest) section
 2. **Transfer to your Android TV** via USB drive or network transfer
 3. **Enable Unknown Sources** on your Android TV:
    - Settings → Device Preferences → About → Build (click 7 times to enable Developer Options)
@@ -73,9 +72,17 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 
 This project is open source. Please see the LICENSE file for details.
 
-## Disclaimer
+## Legal Disclaimer
 
-This is an unofficial application. SpecStream is not affiliated with Charter Communications or Spectrum. Users must have a valid Spectrum TV subscription to use this application.
+**IMPORTANT**: This is an unofficial, third-party application developed independently and is NOT affiliated with, endorsed by, or connected to Charter Communications, Spectrum, or any of their subsidiaries.
+
+- ✅ **Valid Subscription Required**: Users must have a legitimate, paid Spectrum TV subscription
+- ✅ **No Content Piracy**: This app does not store, redistribute, or provide unauthorized access to content
+- ✅ **Web Browser Equivalent**: Functions similarly to accessing watch.spectrum.net through a standard web browser
+- ✅ **User Responsibility**: Users are responsible for complying with Spectrum's Terms of Service
+- ⚠️ **Use at Own Risk**: This application is provided "as-is" without warranties of any kind
+
+**Trademark Notice**: "Spectrum" is a trademark of Charter Communications. This application is not endorsed by or affiliated with Charter Communications.
 
 ## Support
 
