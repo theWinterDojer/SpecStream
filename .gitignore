@@ -1,0 +1,26 @@
+*.iml
+.gradle/
+.kotlin/
+.idea
+app/build/
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+images/
+/local.properties
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+PROJECT_OVERVIEW.md
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
