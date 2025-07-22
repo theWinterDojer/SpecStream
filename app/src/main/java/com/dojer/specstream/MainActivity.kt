@@ -42,9 +42,6 @@ class MainActivity : AppCompatActivity() {
         
         super.onCreate(savedInstanceState)
         
-        // Show splash screen for 1 second
-        Thread.sleep(1000)
-        
         // Configure fullscreen and TV display settings
         setupFullscreenDisplay()
         
@@ -55,19 +52,21 @@ class MainActivity : AppCompatActivity() {
         guideWebView = findViewById(R.id.webview_guide)
         loadingProgress = findViewById(R.id.loading_progress)
         
-        // Setup splash screen fade-out animation
+        // Setup splash screen with fade-out animation
         val splashOverlay: View = findViewById(R.id.splash_overlay)
         val fadeOut = AnimationUtils.loadAnimation(this, R.anim.fade_out)
         
-        fadeOut.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation) {}
-            override fun onAnimationRepeat(animation: Animation) {}
-            override fun onAnimationEnd(animation: Animation) {
-                splashOverlay.visibility = View.GONE
-            }
-        })
-        
-        splashOverlay.startAnimation(fadeOut)
+        // Show splash screen for 1 second, then fade out
+        splashOverlay.postDelayed({
+            splashOverlay.startAnimation(fadeOut)
+            fadeOut.setAnimationListener(object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {}
+                override fun onAnimationRepeat(animation: Animation?) {}
+                override fun onAnimationEnd(animation: Animation?) {
+                    splashOverlay.visibility = View.GONE
+                }
+            })
+        }, 1000) // 1 second delay before fade-out starts
         
         // Views initialized successfully
         
@@ -639,15 +638,16 @@ class MainActivity : AppCompatActivity() {
     fun navToChannel(channelId: String) {
         try {
             runOnUiThread {
-                Log.d("SpecStream", "JavaScript: Navigating to channel $channelId")
+                Log.d("SpecStream", "Channel switch to $channelId")
+                Log.d("SpecStream", "Using reliable page reload for channel switching")
                 playerWebView.loadUrl("https://watch.spectrum.net/livetv?tmsid=$channelId")
-                // Clear WebView history so back button doesn't navigate to previous channels
-                playerWebView.clearHistory()
+                playerWebView.clearHistory() // Prevent back navigation between channels
+                
                 guideWebView.visibility = View.GONE
                 guideWebView.evaluateJavascript("history.back();", null)
             }
         } catch (e: Exception) {
-            Log.e("SpecStream", "Error navigating to channel: $e")
+            Log.e("SpecStream", "Error in channel navigation: $e")
         }
     }
     
