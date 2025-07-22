@@ -76,11 +76,11 @@ This project is open source. Please see the LICENSE file for details.
 
 **IMPORTANT**: This is an unofficial, third-party application developed independently and is NOT affiliated with, endorsed by, or connected to Charter Communications, Spectrum, or any of their subsidiaries.
 
-- ✅ **Valid Subscription Required**: Users must have a legitimate, paid Spectrum TV subscription
-- ✅ **No Content Piracy**: This app does not store, redistribute, or provide unauthorized access to content
-- ✅ **Web Browser Equivalent**: Functions similarly to accessing watch.spectrum.net through a standard web browser
-- ✅ **User Responsibility**: Users are responsible for complying with Spectrum's Terms of Service
-- ⚠️ **Use at Own Risk**: This application is provided "as-is" without warranties of any kind
+- **Valid Subscription Required**: Users must have a legitimate, paid Spectrum TV subscription
+- **No Content Piracy**: This app does not store, redistribute, or provide unauthorized access to content
+- **Web Browser Equivalent**: Functions similarly to accessing watch.spectrum.net through a standard web browser
+- **User Responsibility**: Users are responsible for complying with Spectrum's Terms of Service
+- **Use at Own Risk**: This application is provided "as-is" without warranties of any kind
 
 **Trademark Notice**: "Spectrum" is a trademark of Charter Communications. This application is not endorsed by or affiliated with Charter Communications.
 

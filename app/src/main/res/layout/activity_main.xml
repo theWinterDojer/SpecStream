@@ -33,4 +33,12 @@
         android:indeterminate="true"
         android:visibility="visible" />
 
+    <!-- Splash screen overlay with fade-out animation -->
+    <FrameLayout
+        android:id="@+id/splash_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/splash_background"
+        android:layout_gravity="center"/>
+
 </RelativeLayout> 

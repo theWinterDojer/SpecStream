@@ -33,7 +33,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.SpecStream"
+            android:theme="@style/Theme.SpecStream.Splash"
             android:launchMode="singleTask"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|uiMode|density"
             android:resizeableActivity="false"

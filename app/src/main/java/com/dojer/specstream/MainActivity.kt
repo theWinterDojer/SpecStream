@@ -8,10 +8,13 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.webkit.*
 import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+
 import androidx.core.view.isGone
 
 class MainActivity : AppCompatActivity() {
@@ -34,7 +37,13 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Reset from splash theme to normal theme
+        setTheme(R.style.Theme_SpecStream)
+        
         super.onCreate(savedInstanceState)
+        
+        // Show splash screen for 1 second
+        Thread.sleep(1000)
         
         // Configure fullscreen and TV display settings
         setupFullscreenDisplay()
@@ -45,6 +54,20 @@ class MainActivity : AppCompatActivity() {
         playerWebView = findViewById(R.id.webview_player)
         guideWebView = findViewById(R.id.webview_guide)
         loadingProgress = findViewById(R.id.loading_progress)
+        
+        // Setup splash screen fade-out animation
+        val splashOverlay: View = findViewById(R.id.splash_overlay)
+        val fadeOut = AnimationUtils.loadAnimation(this, R.anim.fade_out)
+        
+        fadeOut.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationStart(animation: Animation) {}
+            override fun onAnimationRepeat(animation: Animation) {}
+            override fun onAnimationEnd(animation: Animation) {
+                splashOverlay.visibility = View.GONE
+            }
+        })
+        
+        splashOverlay.startAnimation(fadeOut)
         
         // Views initialized successfully
         
