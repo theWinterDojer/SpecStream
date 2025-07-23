@@ -4,11 +4,11 @@ Android TV application that provides access to Spectrum TV streaming in a simple
 
 ## Features
 
-**🎯 Android TV Optimized** - Built specifically for TV devices with D-pad controls
+**🎯 Android TV Optimized** - Built specifically for TV devices with D-pad controls  
 **🎬 Dual WebView Architecture** - Smooth video playback with overlay guide system  
-**📺 Full Channel Guide** - Complete program guide with direct channel navigation
-**🧠 Channel Memory** - Remembers last watched channel if app is in the background
-**⚡ Hardware Accelerated** - Enhanced video playback performance on Android TV devices
+**📺 Full Channel Guide** - Complete program guide with direct channel navigation  
+**🧠 Channel Memory** - Remembers last watched channel if app is in the background  
+**⚡ Hardware Accelerated** - Enhanced video playback performance on Android TV devices  
 
 ## Requirements
 
