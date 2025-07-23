@@ -11,9 +11,11 @@ images/
 .externalNativeBuild
 .cxx
 PROJECT_OVERVIEW.md
+spectrumtv_webview-1.2.1
 
 # Logs
 *.log
+*.logcat
 
 # Temporary files
 *.tmp

@@ -4,11 +4,11 @@ Android TV application that provides access to Spectrum TV streaming in a simple
 
 ## Features
 
-**Android TV Optimized** - Built specifically for TV devices with D-pad controls  
-**Dual WebView Architecture** - Smooth video playback with overlay guide system   
-**Channel Guide** - Access to full program guide with direct channel navigation  
-**Smart Channel Memory** - Remembers your last watched channel when resuming play
-**Hardware Accelerated** - Enhanced playback on Android TV devices
+**🎯 Android TV Optimized** - Built specifically for TV devices with D-pad controls
+**🎬 Dual WebView Architecture** - Smooth video playback with overlay guide system  
+**📺 Full Channel Guide** - Complete program guide with direct channel navigation
+**🧠 Channel Memory** - Remembers last watched channel if app is in the background
+**⚡ Hardware Accelerated** - Enhanced video playback performance on Android TV devices
 
 ## Requirements
 
@@ -43,11 +43,11 @@ For developers who want to modify or contribute:
 ## Usage
 
 1. **Launch SpecStream** from your Android TV home screen
-2. **Log into your Spectrum account** when prompted
+2. **Log into your Spectrum account** when prompted  
 3. **Navigate with your TV remote:**
    - **D-pad Up/Down**: Open channel guide
    - **D-pad Left/Right**: Navigate within guide (when open)
-   - **D-pad Center/Enter**: Select channel
+   - **D-pad Center/Enter**: Select channel 
    - **Back button**: Hide guide or exit app (double-press)
 
 ## Supported Devices
@@ -60,7 +60,7 @@ For developers who want to modify or contribute:
 ## Technical Details
 
 - **Language**: Kotlin
-- **Min SDK**: 26 (Android 8.0)
+- **Min SDK**: 26 (Android 8.0) 
 - **Target SDK**: 36 (Latest)
 - **Architecture**: Dual WebView with JavaScript bridge
 - **TV Features**: Leanback launcher, D-pad navigation, hardware acceleration

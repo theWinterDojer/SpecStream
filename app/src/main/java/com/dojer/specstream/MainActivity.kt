@@ -12,7 +12,6 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.webkit.*
 import android.widget.ProgressBar
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
 import androidx.core.view.isGone
@@ -30,6 +29,9 @@ class MainActivity : AppCompatActivity() {
     
     // Track guide states for D-pad navigation
     private var guideLoaded = false
+    
+    // Session-only channel memory - resets when app is fully closed
+    private var currentChannelUrl: String? = null
     
     // Track back button state for clean exit behavior
     private var lastBackPressTime = 0L
@@ -82,50 +84,12 @@ class MainActivity : AppCompatActivity() {
             loadingProgress.visibility = View.GONE
         }
         
-        // Modern back gesture handling
-        setupBackPressedCallback()
-        
         // Add JavaScript interface for SpecStream functionality
         playerWebView.addJavascriptInterface(this, "SpecStream")
         guideWebView.addJavascriptInterface(this, "SpecStream")
         
         Log.d("SpecStream", "Activity setup complete - ready for D-pad events")
     }
-    
-    private fun setupBackPressedCallback() {
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Log.d("SpecStream", "Back pressed via modern callback")
-                
-                when {
-                    !guideWebView.isGone -> {
-                        // Hide guide overlay
-                        Log.d("SpecStream", "Back: Hiding guide overlay")
-                        hideGuide()
-                    }
-                    playerWebView.canGoBack() -> {
-                        // Normal web navigation back
-                        Log.d("SpecStream", "Back: Web navigation")
-                        playerWebView.goBack()
-                    }
-                    else -> {
-                        // Double-back to exit when in clean video state
-                        val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastBackPressTime < BACK_PRESS_TIME_INTERVAL) {
-                            Log.d("SpecStream", "Back: Double-back detected, closing app")
-                            finish()
-                        } else {
-                            Log.d("SpecStream", "Back: First back press in clean state, staying in video")
-                            lastBackPressTime = currentTime
-                            // Could show a toast here: "Press back again to exit"
-                        }
-                    }
-                }
-            }
-        })
-    }
-
-
     
     private fun setupFullscreenDisplay() {
         Log.d("SpecStream", "Setting up basic fullscreen display")
@@ -204,6 +168,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        // Performance optimization for TV apps
+        playerWebView.setVerticalScrollBarEnabled(false)
+        
         // Load initial page
     }
     
@@ -212,6 +179,10 @@ class MainActivity : AppCompatActivity() {
         Log.d("SpecStream", "Setting up guide WebView...")
         
         configureWebViewSettings(guideWebView)
+        
+        // 🔥 CRITICAL PERFORMANCE OPTIMIZATIONS
+        guideWebView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        guideWebView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null)
         
         // Set WebView client for guide
         guideWebView.webViewClient = object : WebViewClient() {
@@ -246,23 +217,27 @@ class MainActivity : AppCompatActivity() {
             userAgentString = desktopUserAgent
             mediaPlaybackRequiresUserGesture = false
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            
+            // KEEP: These improve performance and caching
             cacheMode = WebSettings.LOAD_DEFAULT
-            setSupportZoom(true)
-            builtInZoomControls = true
-            displayZoomControls = false
-            allowFileAccess = true
-            allowContentAccess = true
-            loadWithOverviewMode = true
-            useWideViewPort = true
+            
+            // REMOVED: These zoom/viewport settings can interfere with video streaming
+            // setSupportZoom(true)
+            // builtInZoomControls = true
+            // displayZoomControls = false
+            // loadWithOverviewMode = true
+            // useWideViewPort = true
+            
+            // REMOVED: File access not needed for streaming, potential security issue
+            // allowFileAccess = true
+            // allowContentAccess = true
         }
     }
     
     private fun loadSpectrumSite() {
-        val lastChannelUrl = getLastChannelUrl()
-        
-        if (lastChannelUrl != null) {
-            Log.d("SpecStream", "Resuming last channel: $lastChannelUrl")
-            playerWebView.loadUrl(lastChannelUrl)
+        if (currentChannelUrl != null) {
+            Log.d("SpecStream", "Resuming session channel: $currentChannelUrl")
+            playerWebView.loadUrl(currentChannelUrl!!)
         } else {
             Log.d("SpecStream", "Loading fresh Spectrum session")
             playerWebView.loadUrl("https://watch.spectrum.net/")
@@ -270,40 +245,9 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun saveLastChannel(channelId: String) {
-        try {
-            val channelUrl = "https://watch.spectrum.net/livetv?tmsid=$channelId"
-            getSharedPreferences("SpecStream", MODE_PRIVATE)
-                .edit()
-                .putString("last_channel_url", channelUrl)
-                .apply()
-            Log.d("SpecStream", "Saved last channel URL: $channelUrl")
-        } catch (e: Exception) {
-            Log.e("SpecStream", "Error saving channel: $e")
-        }
+        currentChannelUrl = "https://watch.spectrum.net/livetv?tmsid=$channelId"
+        Log.d("SpecStream", "Channel remembered for this session: $currentChannelUrl")
     }
-    
-    private fun getLastChannelUrl(): String? {
-        return try {
-            val prefs = getSharedPreferences("SpecStream", MODE_PRIVATE)
-            val channelUrl = prefs.getString("last_channel_url", null)
-            
-            if (!channelUrl.isNullOrEmpty()) {
-                Log.d("SpecStream", "Found last channel URL: $channelUrl")
-                channelUrl
-            } else {
-                Log.d("SpecStream", "No last channel URL found")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("SpecStream", "Error loading last channel URL: $e")
-            null
-        }
-    }
-    
-
-
-    
-
     
     private fun injectUiCleanupScript() {
         Log.d("SpecStream", "Injecting UI cleanup for TV interface...")
@@ -311,17 +255,6 @@ class MainActivity : AppCompatActivity() {
         val uiCleanupScript = """
             (function() {
                 console.log('SpecStream: Starting TV UI cleanup...');
-                
-                // Debug: Check what guide elements exist for troubleshooting
-                function debugGuideElements() {
-                    var player = document.querySelector('#spectrum-player');
-                    console.log('SpecStream: Player element found:', !!player);
-                    
-                    var channelBrowser = document.querySelector('#channel-browser');
-                    console.log('SpecStream: Channel browser found:', !!channelBrowser);
-                    
-                    console.log('SpecStream: jQuery available:', typeof $ !== 'undefined');
-                }
                 
                 // Create a function that runs repeatedly to handle dynamic content
                 var cleanupInterval = setInterval(function() {
@@ -380,9 +313,6 @@ class MainActivity : AppCompatActivity() {
                         if (video) {
                             video.volume = 0.75;
                             console.log('SpecStream: Video found, volume set to 75%');
-                            
-                            // Debug guide elements when video is ready
-                            debugGuideElements();
                             
                             // Preload guide for better performance
                             if (typeof SpecStream !== 'undefined') {
@@ -624,18 +554,6 @@ class MainActivity : AppCompatActivity() {
                     """, null)
                     return true
                 }
-                
-                // Temporary keyboard shortcuts for emulator testing
-                KeyEvent.KEYCODE_U -> {
-                    Log.d("SpecStream", "Test key U: Showing guide via JavaScript")
-                    playerWebView.evaluateJavascript("toggleGuide('SHOWGUIDE');", null)
-                    return true
-                }
-                KeyEvent.KEYCODE_H -> {
-                    Log.d("SpecStream", "Test key H: Hiding guide via JavaScript")
-                    playerWebView.evaluateJavascript("toggleGuide('HIDEGUIDE');", null)
-                    return true
-                }
             }
         }
         
@@ -708,13 +626,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun hideGuide() {
-        Log.d("SpecStream", "Hiding guide overlay")
-        runOnUiThread {
-            guideWebView.visibility = View.GONE
-        }
-    }
-    
     private fun resetBackPressTimer() {
         lastBackPressTime = 0L
     }
@@ -723,13 +634,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         playerWebView.onResume()
         guideWebView.onResume()
-        
-        // Restore basic fullscreen mode
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        )
     }
     
     override fun onPause() {
