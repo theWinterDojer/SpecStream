@@ -34,6 +34,8 @@ class MainActivity : AppCompatActivity() {
     // Track back button state for clean exit behavior
     private var lastBackPressTime = 0L
     private val BACK_PRESS_TIME_INTERVAL = 2000L // 2 seconds
+    
+
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -256,9 +258,46 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun loadSpectrumSite() {
-        // Always start with a fresh Spectrum session
-        Log.d("SpecStream", "Loading fresh Spectrum session")
-        playerWebView.loadUrl("https://watch.spectrum.net/")
+        val lastChannelUrl = getLastChannelUrl()
+        
+        if (lastChannelUrl != null) {
+            Log.d("SpecStream", "Resuming last channel: $lastChannelUrl")
+            playerWebView.loadUrl(lastChannelUrl)
+        } else {
+            Log.d("SpecStream", "Loading fresh Spectrum session")
+            playerWebView.loadUrl("https://watch.spectrum.net/")
+        }
+    }
+    
+    private fun saveLastChannel(channelId: String) {
+        try {
+            val channelUrl = "https://watch.spectrum.net/livetv?tmsid=$channelId"
+            getSharedPreferences("SpecStream", MODE_PRIVATE)
+                .edit()
+                .putString("last_channel_url", channelUrl)
+                .apply()
+            Log.d("SpecStream", "Saved last channel URL: $channelUrl")
+        } catch (e: Exception) {
+            Log.e("SpecStream", "Error saving channel: $e")
+        }
+    }
+    
+    private fun getLastChannelUrl(): String? {
+        return try {
+            val prefs = getSharedPreferences("SpecStream", MODE_PRIVATE)
+            val channelUrl = prefs.getString("last_channel_url", null)
+            
+            if (!channelUrl.isNullOrEmpty()) {
+                Log.d("SpecStream", "Found last channel URL: $channelUrl")
+                channelUrl
+            } else {
+                Log.d("SpecStream", "No last channel URL found")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("SpecStream", "Error loading last channel URL: $e")
+            null
+        }
     }
     
 
@@ -642,6 +681,9 @@ class MainActivity : AppCompatActivity() {
                 Log.d("SpecStream", "Using reliable page reload for channel switching")
                 playerWebView.loadUrl("https://watch.spectrum.net/livetv?tmsid=$channelId")
                 playerWebView.clearHistory() // Prevent back navigation between channels
+                
+                // Save the new channel for memory
+                saveLastChannel(channelId)
                 
                 guideWebView.visibility = View.GONE
                 guideWebView.evaluateJavascript("history.back();", null)
