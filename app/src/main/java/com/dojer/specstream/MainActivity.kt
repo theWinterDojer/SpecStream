@@ -119,6 +119,9 @@ class MainActivity : AppCompatActivity() {
             throw Exception("WebView not available on this device")
         }
         
+        // Set background to black to prevent white flash during loading
+        playerWebView.setBackgroundColor(android.graphics.Color.BLACK)
+        
         configureWebViewSettings(playerWebView)
         
         // Set WebView client for handling page navigation
