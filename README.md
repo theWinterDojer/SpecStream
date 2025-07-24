@@ -20,7 +20,7 @@ Android TV application that provides access to Spectrum TV streaming in a simple
 
 ### Option 1: Download APK 
 
-1. **Download the latest APK** from the [Releases](https://github.com/YOUR_USERNAME/SpecStream/releases/latest) section
+1. **Download the latest APK** from the [Releases](https://github.com/theWinterDojer/SpecStream/releases/latest) section
 2. **Transfer to your Android TV** via USB drive or network transfer
 3. **Enable Unknown Sources** on your Android TV:
    - Settings → Device Preferences → About → Build (click 7 times to enable Developer Options)
