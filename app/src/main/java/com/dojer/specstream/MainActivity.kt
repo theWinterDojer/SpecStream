@@ -262,12 +262,97 @@ class MainActivity : AppCompatActivity() {
                 // Create a function that runs repeatedly to handle dynamic content
                 var cleanupInterval = setInterval(function() {
                     try {
-                        // Accept initial prompts automatically
-                        if (document.querySelector('.continue-button')?.childNodes?.length > 0) {
-                            document.querySelector('.continue-button')?.childNodes[0].click();
+                        // Accept initial prompts automatically (original lean selectors)
+                        var authButtons = [
+                            '.continue-button',
+                            '[aria-label*="Continue and accept"]',
+                            '.btn-success'
+                        ];
+                        
+                        // Try each selector safely
+                        authButtons.forEach(function(selector) {
+                            try {
+                                var button = document.querySelector(selector);
+                                if (button && button.offsetParent !== null) { // Check if visible
+                                    button.click();
+                                    console.log('SpecStream: Auto-clicked auth button:', selector);
+                                }
+                            } catch (e) {
+                                // Silently continue if selector fails
+                            }
+                        });
+                        
+                        // Special handling for the original continue-button with child nodes
+                        try {
+                            if (document.querySelector('.continue-button')?.childNodes?.length > 0) {
+                                document.querySelector('.continue-button').childNodes[0].click();
+                                console.log('SpecStream: Auto-clicked continue-button child node');
+                            }
+                        } catch (e) {
+                            // Silently continue if this fails
                         }
-                        document.querySelector('[aria-label*="Continue and accept"]')?.click();
-                        document.querySelector('.btn-success')?.click();
+                        
+                        // Check for login screen and show network limitation message
+                        var loginIndicators = [
+                            'Sign In to Get Started',
+                            'Username',
+                            'Password',
+                            'input[type="password"]',
+                            'input[name="password"]',
+                            'input[name="username"]',
+                            '.login-form',
+                            '[data-testid*="login"]'
+                        ];
+                        
+                        var isLoginScreen = false;
+                        loginIndicators.forEach(function(indicator) {
+                            if (indicator.startsWith('.') || indicator.startsWith('[') || indicator.startsWith('input')) {
+                                // CSS selector
+                                if (document.querySelector(indicator)) {
+                                    isLoginScreen = true;
+                                }
+                            } else {
+                                // Text content
+                                if (document.body && document.body.textContent.includes(indicator)) {
+                                    isLoginScreen = true;
+                                }
+                            }
+                        });
+                        
+                        if (isLoginScreen) {
+                            var existingAlert = document.getElementById('spectrum-network-alert');
+                            if (!existingAlert) {
+                                var alertDiv = document.createElement('div');
+                                alertDiv.id = 'spectrum-network-alert';
+                                alertDiv.style.cssText = `
+                                    position: fixed;
+                                    top: 50%;
+                                    left: 50%;
+                                    transform: translate(-50%, -50%);
+                                    background: #1F247A;
+                                    color: white;
+                                    padding: 20px 30px;
+                                    border-radius: 8px;
+                                    font-size: 16px;
+                                    text-align: center;
+                                    z-index: 10000;
+                                    width: 600px;
+                                    height: 280px;
+                                    border: 3px solid #1D4EAD;
+                                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+                                    display: flex;
+                                    flex-direction: column;
+                                    justify-content: center;
+                                `;
+                                alertDiv.innerHTML = `
+                                    <div style="color: #FFD801; margin-bottom: 15px; font-size: 20px; font-weight: bold;">🏠 Please connect to your home Spectrum network</div>
+                                    <div style="margin-bottom: 25px; font-size: 15px; line-height: 1.4;">Due to login restrictions - this app is currently unavailable for use outside of your Spectrum network (or while using VPN services). If you think this message is in error, please check GitHub for troubleshooting steps.</div>
+                                    <div style="font-size: 16px; color: #b3c5ff;">Press BACK to close</div>
+                                `;
+                                document.body.appendChild(alertDiv);
+                                console.log('SpecStream: Login screen detected without auto-auth, showing network requirement message');
+                            }
+                        }
                         
                         // Hide desktop navigation elements
                         var elementsToHide = [
@@ -311,20 +396,96 @@ class MainActivity : AppCompatActivity() {
                             guide.style.width = '100%';
                         }
                         
-                        // Set video volume to 75%
+                        // Set video volume to 75% and ensure not muted
                         var video = document.querySelector('video');
                         if (video) {
+                            // Check if video is muted and unmute if needed
+                            if (video.muted) {
+                                video.muted = false;
+                                console.log('SpecStream: Video was muted, unmuted automatically');
+                            }
+                            
                             video.volume = 0.75;
                             console.log('SpecStream: Video found, volume set to 75%');
+                            
+                            // Check for UI volume control mute button and unmute if needed
+                            var volumeButton = document.querySelector('#volume-control-icon');
+                            var volumeSlider = document.querySelector('#volume-control-slider');
+                            
+                            if (volumeButton && volumeSlider) {
+                                // Check if aria-pressed="true" indicates muted state
+                                var isMuted = volumeButton.getAttribute('aria-pressed') === 'true';
+                                var sliderValue = parseInt(volumeSlider.value) || 0;
+                                
+                                if (isMuted || sliderValue === 0) {
+                                    console.log('SpecStream: UI volume controls appear muted, attempting to unmute');
+                                    
+                                    // Click the mute button to unmute
+                                    volumeButton.click();
+                                    
+                                    // Set slider to 75% (75 out of 100)
+                                    setTimeout(function() {
+                                        volumeSlider.value = 75;
+                                        // Trigger change event to update UI
+                                        var changeEvent = new Event('change', { bubbles: true });
+                                        volumeSlider.dispatchEvent(changeEvent);
+                                        var inputEvent = new Event('input', { bubbles: true });
+                                        volumeSlider.dispatchEvent(inputEvent);
+                                        console.log('SpecStream: Volume slider set to 75%');
+                                    }, 100);
+                                }
+                            }
                             
                             // Preload guide for better performance
                             if (typeof SpecStream !== 'undefined') {
                                 SpecStream.preloadGuide();
                             }
                             
+                            // Start periodic volume monitoring (every 30 seconds)
+                            setInterval(function() {
+                                try {
+                                    var video = document.querySelector('video');
+                                    var volumeButton = document.querySelector('#volume-control-icon');
+                                    var volumeSlider = document.querySelector('#volume-control-slider');
+                                    
+                                    if (video && volumeButton && volumeSlider) {
+                                        var videoMuted = video.muted;
+                                        var uiMuted = volumeButton.getAttribute('aria-pressed') === 'true';
+                                        var sliderValue = parseInt(volumeSlider.value) || 0;
+                                        
+                                        if (videoMuted || uiMuted || sliderValue === 0) {
+                                            console.log('SpecStream: Periodic check detected muted audio, restoring volume');
+                                            
+                                            // Unmute video element
+                                            if (videoMuted) {
+                                                video.muted = false;
+                                            }
+                                            
+                                            // Unmute UI if needed
+                                            if (uiMuted) {
+                                                volumeButton.click();
+                                            }
+                                            
+                                            // Restore volume
+                                            video.volume = 0.75;
+                                            volumeSlider.value = 75;
+                                            
+                                            // Trigger UI events
+                                            var changeEvent = new Event('change', { bubbles: true });
+                                            volumeSlider.dispatchEvent(changeEvent);
+                                            var inputEvent = new Event('input', { bubbles: true });
+                                            volumeSlider.dispatchEvent(inputEvent);
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.log('SpecStream: Error in volume monitoring:', e);
+                                }
+                            }, 30000); // Check every 30 seconds
+                            
+
                             // Stop the cleanup interval once video is found and configured
                             clearInterval(cleanupInterval);
-                            console.log('SpecStream: TV UI cleanup completed');
+                            console.log('SpecStream: TV UI cleanup completed - volume monitoring active');
                         }
                         
                     } catch (e) {
@@ -505,6 +666,24 @@ class MainActivity : AppCompatActivity() {
                 
                 KeyEvent.KEYCODE_BACK -> {
                     Log.d("SpecStream", "Back button pressed: guide visible=${!guideWebView.isGone}")
+                    
+                    // Check if network alert is showing and dismiss it + exit app
+                    playerWebView.evaluateJavascript("""
+                        var alert = document.getElementById('spectrum-network-alert');
+                        if (alert) {
+                            alert.remove();
+                            console.log('SpecStream: Network alert dismissed via back button');
+                            true;
+                        } else {
+                            false;
+                        }
+                    """) { result ->
+                        if (result == "true") {
+                            Log.d("SpecStream", "Back: Dismissed network alert, terminating app")
+                            finish()
+                            return@evaluateJavascript
+                        }
+                    }
                     
                     if (!guideWebView.isGone) {
                         Log.d("SpecStream", "Back: Hiding guide via JavaScript")

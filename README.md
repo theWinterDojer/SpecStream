@@ -15,6 +15,7 @@ Android TV application that provides access to Spectrum TV streaming in a simple
 - **Android TV device** (NVIDIA Shield, Android TV boxes, etc.)
 - **Android 8.0+** (API level 26+)
 - **Spectrum TV subscription** and account
+- **🏠 MUST be connected to your Spectrum home network** - The app will automatically detect and authenticate when on your Spectrum ISP connection. Due to limitations it is not currently possible to use this app outside of your Spectrum network or while using VPN services.  
 
 ## Installation
 
@@ -43,7 +44,7 @@ For developers who want to modify or contribute:
 ## Usage
 
 1. **Launch SpecStream** from your Android TV home screen
-2. **Log into your Spectrum account** when prompted  
+2. **Automatic authentication** when on Spectrum network
 3. **Navigate with your TV remote:**
    - **D-pad Up/Down**: Open channel guide
    - **D-pad Left/Right**: Navigate within guide (when open)
@@ -84,6 +85,12 @@ This project is open source. Please see the LICENSE file for details.
 - **Use at Own Risk**: This application is provided "as-is" without warranties of any kind
 
 **Trademark Notice**: "Spectrum" is a trademark of Charter Communications. This application is not endorsed by or affiliated with Charter Communications.
+
+## Troubleshooting
+
+- **Verify you're on your Spectrum home network** (not VPN or mobile hotspot)
+- **Disable any VPN services** that might interfere with network detection
+- **Restart your router** if you're certain you're on Spectrum network but still experiencing issues
 
 ## Support
 
