@@ -375,6 +375,26 @@ class MainActivity : AppCompatActivity() {
                             });
                         });
                         
+                        // Hide video control UI elements (using visibility: hidden to preserve functionality)
+                        var videoControlsToHide = [
+                            'img[alt="full screen"]',
+                            '.si-circle-info-f.info-icon',
+                            'img[alt="Closed captions"]',
+                            'img[alt="Audio"]',
+                            'img[alt="Closed captioning settings"]',
+                            'img[alt="mute"]',
+                            '#cast_caf_icon_boxfill',
+                            '.cast_caf_state_h'
+                        ];
+                        
+                        videoControlsToHide.forEach(function(selector) {
+                            var elements = document.querySelectorAll(selector);
+                            elements.forEach(function(el) {
+                                el.style.visibility = 'hidden';
+                                console.log('SpecStream: Hidden video control element:', selector);
+                            });
+                        });
+                        
                         // Style video player for TV
                         var player = document.querySelector('#spectrum-player');
                         if (player) {
