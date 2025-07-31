@@ -11,7 +11,7 @@ images/
 .externalNativeBuild
 .cxx
 PROJECT_OVERVIEW.md
-spectrumtv_webview-1.2.1
+*.code-workspace
 
 # Logs
 *.log

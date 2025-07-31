@@ -1,3 +1,5 @@
+![Banner](https://github.com/theWinterDojer/SpecStream/blob/main/app/src/main/res/drawable/splashscreen.png?raw=true)
+
 # SpecStream 📺
 
 Android TV application that provides access to Spectrum TV streaming in a simple WebView Wrapper.
