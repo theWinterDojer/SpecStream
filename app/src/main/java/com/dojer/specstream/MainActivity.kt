@@ -544,6 +544,48 @@ class MainActivity : AppCompatActivity() {
             (function() {
                 console.log('SpecStream: Starting guide UI cleanup...');
                 
+                // Auto-dismiss Spectrum connectivity modal (only needed in guide WebView)
+                var CONNECTIVITY_MODAL_INDICATORS = [
+                    'Connect to Your Spectrum Internet for More to Watch',
+                    'Due to programming restrictions'
+                ];
+                
+                function checkAndDismissConnectivityModal() {
+                    var hasModal = CONNECTIVITY_MODAL_INDICATORS.some(function(text) {
+                        return document.body && document.body.textContent.includes(text);
+                    });
+                    
+                    if (!hasModal) return;
+                    
+                    var buttons = document.querySelectorAll('button');
+                    buttons.forEach(function(btn) {
+                        if (btn.textContent.trim() === 'OK' && 
+                            btn.offsetParent !== null && 
+                            !btn.disabled) {
+                            console.log('SpecStream: Auto-dismissing connectivity modal in guide');
+                            btn.click();
+                            return; // Exit after first successful click
+                        }
+                    });
+                }
+                
+                // Check immediately on guide load and then periodically  
+                setTimeout(function() {
+                    try {
+                        checkAndDismissConnectivityModal();
+                    } catch (e) {
+                        console.log('SpecStream: Error in initial connectivity modal check:', e);
+                    }
+                }, 1000); // Initial check after 1 second
+                
+                setInterval(function() {
+                    try {
+                        checkAndDismissConnectivityModal();
+                    } catch (e) {
+                        console.log('SpecStream: Error in periodic connectivity modal check:', e);
+                    }
+                }, 3000); // Then every 3 seconds
+                
                 // Define channel click handler function
                 function channelClickHandler(event) {
                     try {
