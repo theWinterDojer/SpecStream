@@ -292,7 +292,7 @@ class MainActivity : AppCompatActivity() {
                             // Silently continue if this fails
                         }
                         
-                        // Check for login screen and show network limitation message
+                        // Check for login screen - prepare for D-pad login interface
                         var loginIndicators = [
                             'Sign In to Get Started',
                             'Username',
@@ -320,37 +320,13 @@ class MainActivity : AppCompatActivity() {
                         });
                         
                         if (isLoginScreen) {
-                            var existingAlert = document.getElementById('spectrum-network-alert');
-                            if (!existingAlert) {
-                                var alertDiv = document.createElement('div');
-                                alertDiv.id = 'spectrum-network-alert';
-                                alertDiv.style.cssText = `
-                                    position: fixed;
-                                    top: 50%;
-                                    left: 50%;
-                                    transform: translate(-50%, -50%);
-                                    background: #1F247A;
-                                    color: white;
-                                    padding: 20px 30px;
-                                    border-radius: 8px;
-                                    font-size: 16px;
-                                    text-align: center;
-                                    z-index: 10000;
-                                    width: 600px;
-                                    height: 280px;
-                                    border: 3px solid #1D4EAD;
-                                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-                                    display: flex;
-                                    flex-direction: column;
-                                    justify-content: center;
-                                `;
-                                alertDiv.innerHTML = `
-                                    <div style="color: #FFD801; margin-bottom: 15px; font-size: 20px; font-weight: bold;">🏠 Please connect to your home Spectrum network</div>
-                                    <div style="margin-bottom: 25px; font-size: 15px; line-height: 1.4;">Due to login restrictions - this app is currently unavailable for use outside of your Spectrum network (or while using VPN services). If you think this message is in error, please check GitHub for troubleshooting steps.</div>
-                                    <div style="font-size: 16px; color: #b3c5ff;">Press BACK to close</div>
-                                `;
-                                document.body.appendChild(alertDiv);
-                                console.log('SpecStream: Login screen detected without auto-auth, showing network requirement message');
+                            // Check if cursor navigation is already active to prevent re-initialization
+                            if (!window.loginCursorState || !window.loginCursorState.active) {
+                                console.log('SpecStream: Login screen detected - enabling cursor navigation');
+                                // Enable cursor navigation immediately
+                                enableCursorLoginNavigation();
+                            } else {
+                                console.log('SpecStream: Login screen detected but cursor navigation already active');
                             }
                         }
                         
@@ -519,6 +495,180 @@ class MainActivity : AppCompatActivity() {
                     console.log('SpecStream: UI cleanup timeout reached');
                 }, 30000);
                 
+                // Simplified Login Navigation - Targeting Exact Spectrum Elements
+                window.enableCursorLoginNavigation = function() {
+                    console.log('SpecStream: Enabling simplified login navigation');
+                    
+                    // Check if already initialized to prevent duplicates
+                    if (window.loginCursorState && window.loginCursorState.active) {
+                        console.log('SpecStream: Cursor navigation already active, skipping initialization');
+                        return;
+                    }
+                    
+                    // Target exact Spectrum login elements
+                    var usernameField = document.querySelector('#kite-label-input-4');
+                    var passwordField = document.querySelector('#kite-label-input-6');
+                    var staySignedInCheckbox = document.querySelector('input[type="checkbox"]');
+                    // Target the actual clickable button, not the inner span
+                    var signInButton = document.querySelector('#signInBtn button[type="submit"]') || 
+                                      document.querySelector('button[type="submit"].kite-button--primary') ||
+                                      document.querySelector('button[type="submit"]');
+                    
+                    console.log('SpecStream: Username field found:', !!usernameField);
+                    console.log('SpecStream: Password field found:', !!passwordField);
+                    console.log('SpecStream: Stay signed in checkbox found:', !!staySignedInCheckbox);
+                    console.log('SpecStream: Sign in button found:', !!signInButton);
+                    
+                    if (usernameField && passwordField && signInButton) {
+                        console.log('SpecStream: All required login elements found, setting up navigation');
+                        
+                        // Create simplified navigation with only the essential elements
+                        window.loginCursorState = {
+                            elements: [usernameField, passwordField, signInButton],
+                            currentIndex: 0,
+                            active: true
+                        };
+                        
+                        // Add checkbox if found (optional element)
+                        if (staySignedInCheckbox) {
+                            // Insert checkbox before sign in button
+                            window.loginCursorState.elements.splice(2, 0, staySignedInCheckbox);
+                            console.log('SpecStream: Added stay signed in checkbox to navigation');
+                        }
+                        
+                        console.log('SpecStream: Navigation setup with', window.loginCursorState.elements.length, 'elements');
+                        
+                        // Style all navigable elements for consistent appearance
+                        window.loginCursorState.elements.forEach(function(element, index) {
+                            // Remove any existing border/highlighting from all elements
+                            element.style.border = '';
+                            element.style.outline = 'none';
+                            element.style.boxShadow = 'none';
+                            
+                            if (element.tagName.toLowerCase() === 'input') {
+                                element.style.fontSize = '18px';
+                                element.style.padding = '12px';
+                                element.style.borderRadius = '6px';
+                            } else if (element.tagName.toLowerCase() === 'button') {
+                                // Style for button elements
+                                element.style.fontSize = '16px';
+                                element.style.borderRadius = '6px';
+                            }
+                            
+                            // Prevent automatic focus changes that cause snap-back
+                            element.setAttribute('tabindex', '-1');
+                            
+                            console.log('SpecStream: Styled element', index, ':', element.tagName, element.className || 'no-class');
+                        });
+                        
+                        // No automatic focus management - cursor only moves via D-pad navigation
+                        // This ensures the cursor stays exactly where the user puts it
+                        
+                        // Focus the first element to show native cursor
+                        if (window.loginCursorState.elements.length > 0) {
+                            window.loginCursorState.elements[0].focus();
+                        }
+                        
+                        // Notify Android that login interface is active
+                        if (typeof SpecStream !== 'undefined') {
+                            SpecStream.setLoginInterfaceActive(true);
+                        }
+                        
+                        console.log('SpecStream: Cursor navigation enabled successfully');
+                    } else {
+                        console.log('SpecStream: Could not find login form fields');
+                    }
+                };
+                
+
+                
+
+                
+                window.handleLoginNavigation = function(direction) {
+                    console.log('SpecStream: handleLoginNavigation called with direction:', direction);
+                    
+                    if (!window.loginCursorState) {
+                        console.log('SpecStream: No loginCursorState found');
+                        return;
+                    }
+                    
+                    if (!window.loginCursorState.active) {
+                        console.log('SpecStream: loginCursorState not active');
+                        return;
+                    }
+                    
+                    console.log('SpecStream: Current cursor index:', window.loginCursorState.currentIndex, 
+                               'of', window.loginCursorState.elements.length, 'elements');
+                    
+                    switch (direction) {
+                        case 'UP':
+                            if (window.loginCursorState.currentIndex > 0) {
+                                window.loginCursorState.currentIndex--;
+                                console.log('SpecStream: Moved cursor UP to index:', window.loginCursorState.currentIndex);
+                                // Focus the new element to show native cursor
+                                window.loginCursorState.elements[window.loginCursorState.currentIndex].focus();
+                            } else {
+                                console.log('SpecStream: Cannot move UP - already at first element');
+                            }
+                            break;
+                            
+                        case 'DOWN':
+                            if (window.loginCursorState.currentIndex < window.loginCursorState.elements.length - 1) {
+                                window.loginCursorState.currentIndex++;
+                                console.log('SpecStream: Moved cursor DOWN to index:', window.loginCursorState.currentIndex);
+                                // Focus the new element to show native cursor
+                                window.loginCursorState.elements[window.loginCursorState.currentIndex].focus();
+                            } else {
+                                console.log('SpecStream: Cannot move DOWN - already at last element');
+                            }
+                            break;
+                            
+                        case 'SELECT':
+                            var currentElement = window.loginCursorState.elements[window.loginCursorState.currentIndex];
+                            console.log('SpecStream: Selecting element:', currentElement.tagName, currentElement.type || 'no-type', currentElement.className);
+                            
+                            if (currentElement.tagName.toLowerCase() === 'input') {
+                                if (currentElement.type === 'checkbox') {
+                                    console.log('SpecStream: Toggling stay signed in checkbox');
+                                    // Simple checkbox toggle
+                                    currentElement.checked = !currentElement.checked;
+                                    // Dispatch change event so form recognizes the change
+                                    var changeEvent = new Event('change', { bubbles: true });
+                                    currentElement.dispatchEvent(changeEvent);
+                                } else {
+                                    console.log('SpecStream: Activating input field for keyboard');
+                                    // Only focus - avoid click which can trigger form submission behavior
+                                    currentElement.focus();
+                                }
+                            } else if (currentElement.tagName.toLowerCase() === 'button') {
+                                console.log('SpecStream: Clicking sign in button');
+                                currentElement.click();
+                            } else {
+                                console.log('SpecStream: Clicking element (fallback)');
+                                currentElement.click();
+                            }
+                            break;
+                            
+                        default:
+                            console.log('SpecStream: Unknown navigation direction:', direction);
+                            break;
+                    }
+                };
+                
+                window.cancelLogin = function() {
+                    console.log('SpecStream: Canceling login interface');
+                    
+                    // Disable cursor navigation
+                    if (window.loginCursorState) {
+                        window.loginCursorState.active = false;
+                    }
+                    
+                    // Notify Android that login interface is no longer active
+                    if (typeof SpecStream !== 'undefined') {
+                        SpecStream.setLoginInterfaceActive(false);
+                    }
+                };
+                
                 // Add global functions for D-pad navigation
                 window.toggleGuide = function(action) {
                     console.log('SpecStream: toggleGuide called with:', action);
@@ -679,11 +829,21 @@ class MainActivity : AppCompatActivity() {
     // 2. Guide overlay control requires intercepting events before WebView processing
     // 3. JavaScript bridge communication requires coordinated key event handling
     // 4. OnBackPressedCallback alone cannot handle D-pad Up/Down/Left/Right events
+    // Track if login interface is currently active
+    private var isLoginInterfaceActive = false
+    
     @Suppress("OVERRIDE_DEPRECATION")
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         // Handle D-pad key events for TV navigation
         if (event?.action == KeyEvent.ACTION_DOWN) {
-            Log.d("SpecStream", "dispatchKeyEvent: ${event.keyCode} (guide visible: ${!guideWebView.isGone})")
+            Log.d("SpecStream", "dispatchKeyEvent: ${event.keyCode} (guide visible: ${!guideWebView.isGone}) (login active: $isLoginInterfaceActive)")
+            
+            // Handle login interface navigation if active
+            if (isLoginInterfaceActive) {
+                Log.d("SpecStream", "Login interface active, handling D-pad navigation")
+                handleLoginKeyEvent(event)
+                return true
+            }
             
             when (event.keyCode) {
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
@@ -728,24 +888,6 @@ class MainActivity : AppCompatActivity() {
                 
                 KeyEvent.KEYCODE_BACK -> {
                     Log.d("SpecStream", "Back button pressed: guide visible=${!guideWebView.isGone}")
-                    
-                    // Check if network alert is showing and dismiss it + exit app
-                    playerWebView.evaluateJavascript("""
-                        var alert = document.getElementById('spectrum-network-alert');
-                        if (alert) {
-                            alert.remove();
-                            console.log('SpecStream: Network alert dismissed via back button');
-                            true;
-                        } else {
-                            false;
-                        }
-                    """) { result ->
-                        if (result == "true") {
-                            Log.d("SpecStream", "Back: Dismissed network alert, terminating app")
-                            finish()
-                            return@evaluateJavascript
-                        }
-                    }
                     
                     if (!guideWebView.isGone) {
                         Log.d("SpecStream", "Back: Hiding guide via JavaScript")
@@ -873,6 +1015,71 @@ class MainActivity : AppCompatActivity() {
     private fun resetBackPressTimer() {
         lastBackPressTime = 0L
     }
+    
+    private fun handleLoginKeyEvent(event: KeyEvent?) {
+        if (event == null) return
+        
+        Log.d("SpecStream", "handleLoginKeyEvent: ${event.keyCode} action=${event.action}")
+        
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                Log.d("SpecStream", "Login: D-pad UP - moving cursor up")
+                playerWebView.evaluateJavascript("handleLoginNavigation('UP');", null)
+            }
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                Log.d("SpecStream", "Login: D-pad DOWN - moving cursor down")
+                playerWebView.evaluateJavascript("handleLoginNavigation('DOWN');", null)
+            }
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                Log.d("SpecStream", "Login: CENTER - selecting current element")
+                playerWebView.evaluateJavascript("handleLoginNavigation('SELECT');", null)
+            }
+            KeyEvent.KEYCODE_BACK -> {
+                Log.d("SpecStream", "Login: BACK - canceling login")
+                playerWebView.evaluateJavascript("cancelLogin();", null)
+            }
+            // Let LEFT/RIGHT and other keys pass through to the WebView for native keyboard navigation
+        }
+    }
+    
+
+    
+    @JavascriptInterface
+    @Suppress("unused") // Called from injected JavaScript code
+    fun cancelLogin() {
+        try {
+            runOnUiThread {
+                Log.d("SpecStream", "Login canceled by user")
+                isLoginInterfaceActive = false
+                
+                val cancelScript = """
+                    if (window.cancelLogin) {
+                        window.cancelLogin();
+                    }
+                """
+                
+                playerWebView.evaluateJavascript(cancelScript, null)
+            }
+        } catch (e: Exception) {
+            Log.e("SpecStream", "Error in cancelLogin: $e")
+        }
+    }
+    
+    @JavascriptInterface
+    @Suppress("unused") // Called from injected JavaScript code
+    fun setLoginInterfaceActive(active: Boolean) {
+        try {
+            runOnUiThread {
+                isLoginInterfaceActive = active
+                Log.d("SpecStream", "Login interface active state changed to: $active")
+                // No automatic keyboard triggering - user controls with cursor
+            }
+        } catch (e: Exception) {
+            Log.e("SpecStream", "Error in setLoginInterfaceActive: $e")
+        }
+    }
+    
+
     
     override fun onResume() {
         super.onResume()

@@ -1,23 +1,24 @@
 ![Banner](https://github.com/theWinterDojer/SpecStream/blob/main/app/src/main/res/drawable/splashscreen.png?raw=true)
 
-# SpecStream 📺
+# SpecStream
 
 Android TV application that provides access to Spectrum TV streaming in a simple WebView Wrapper.
 
 ## Features
 
-**🎯 Android TV Optimized** - Built specifically for TV devices with D-pad controls  
-**🎬 Dual WebView Architecture** - Smooth video playback with overlay guide system  
-**📺 Full Channel Guide** - Complete program guide with direct channel navigation  
-**🧠 Channel Memory** - Remembers last watched channel if app is in the background  
-**⚡ Hardware Accelerated** - Enhanced video playback performance on Android TV devices  
+**Android TV Optimized** - Built specifically for TV devices with D-pad controls  
+**Universal Access** - Works anywhere with auto-authentication at home and manual login when away  
+**Dual WebView Architecture** - Smooth video playback with overlay guide system  
+**Full Channel Guide** - Complete program guide with direct channel navigation  
+**Channel Memory** - Remembers last watched channel if app is in the background  
+**Hardware Accelerated** - Enhanced video playback performance on Android TV devices  
 
 ## Requirements
 
 - **Android TV device** (NVIDIA Shield, Android TV boxes, etc.)
 - **Android 8.0+** (API level 26+)
 - **Spectrum TV subscription** and account
-- **🏠 MUST be connected to your Spectrum home network** - The app will automatically detect and authenticate when using your Spectrum ISP. Due to limitations it is not currently possible to use this app outside of your Spectrum network or while using VPN services.  
+- **Works anywhere** - Automatically authenticates when on your Spectrum home network, or provides a convenient login interface when away from home  
 
 ## Installation
 
@@ -46,19 +47,19 @@ For developers who want to modify or contribute:
 ## Usage
 
 1. **Launch SpecStream** from your Android TV home screen
-2. **Automatic authentication** when on Spectrum network
+2. **Automatic authentication** when on your Spectrum home network, or **manual login** when away from home
 3. **Navigate with your TV remote:**
-   - **D-pad Up/Down**: Open channel guide
+   - **D-pad Up/Down**: Open channel guide, or navigate login fields (when off-network)
    - **D-pad Left/Right**: Navigate within guide (when open)
-   - **D-pad Center/Enter**: Select channel 
+   - **D-pad Center/Enter**: Select channel, or activate login fields (when off-network)
    - **Back button**: Hide guide or exit app (double-press)
 
 ## Supported Devices
 
-- ✅ **NVIDIA Shield TV**
-- ✅ **Android TV boxes**
-- ✅ **Smart TVs with Android TV**
-- ✅ **Chromecast with Google TV**
+- **NVIDIA Shield TV**
+- **Android TV boxes**
+- **Smart TVs with Android TV**
+- **Chromecast with Google TV**
 
 ## Technical Details
 
@@ -90,9 +91,10 @@ This project is open source. Please see the LICENSE file for details.
 
 ## Troubleshooting
 
-- **Verify you're on your Spectrum home network** (not VPN or mobile hotspot)
-- **Disable any VPN services** that might interfere with network detection
-- **Restart your router** if you're certain you're on Spectrum network but still experiencing issues
+- **If automatic authentication fails** on your home network, try restarting your router
+- **If manual login doesn't appear** when off-network, ensure you have a stable internet connection
+- **For login issues**, verify your Spectrum username and password are correct
+- **VPN services** may interfere with automatic authentication on home network
 
 ## Support
 
@@ -102,4 +104,4 @@ For issues or questions:
 
 ---
 
-**Enjoy streaming Spectrum TV on your Android TV! 📺** 
+**Enjoy streaming Spectrum TV on your Android TV!** 
