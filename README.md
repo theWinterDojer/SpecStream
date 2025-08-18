@@ -18,7 +18,7 @@ Android TV application that provides access to Spectrum TV streaming in a simple
 - **Android TV device** (NVIDIA Shield, Android TV boxes, etc.)
 - **Android 8.0+** (API level 26+)
 - **Spectrum TV subscription** and account
-- **Works anywhere** - Automatically authenticates when on your Spectrum home network, or provides a dpad login methed when off network
+- **Works anywhere** - Automatically authenticates when on your Spectrum home network, or provides a dpad login method when off network
 
 ## Installation
 
