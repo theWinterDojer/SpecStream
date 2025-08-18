@@ -6,19 +6,19 @@ Android TV application that provides access to Spectrum TV streaming in a simple
 
 ## Features
 
-**Android TV Optimized** - Built specifically for TV devices with D-pad controls  
-**Universal Access** - Works anywhere with auto-authentication at home and manual login when away  
-**Dual WebView Architecture** - Smooth video playback with overlay guide system  
-**Full Channel Guide** - Complete program guide with direct channel navigation  
-**Channel Memory** - Remembers last watched channel if app is in the background  
-**Hardware Accelerated** - Enhanced video playback performance on Android TV devices  
+- **Android TV Optimized** - Built specifically for TV devices with D-pad controls  
+- **Universal Access** - Works anywhere with auto-authentication at home and manual login when away  
+- **Dual WebView Architecture** - Smooth video playback with overlay guide system  
+- **Full Channel Guide** - Complete program guide with direct channel navigation  
+- **Channel Memory** - Remembers last watched channel if app is in the background  
+- **Hardware Accelerated** - Enhanced video playback performance on Android TV devices  
 
 ## Requirements
 
 - **Android TV device** (NVIDIA Shield, Android TV boxes, etc.)
 - **Android 8.0+** (API level 26+)
 - **Spectrum TV subscription** and account
-- **Works anywhere** - Automatically authenticates when on your Spectrum home network, or provides a convenient login interface when away from home  
+- **Works anywhere** - Automatically authenticates when on your Spectrum home network, or provides a dpad login method when off network
 
 ## Installation
 
