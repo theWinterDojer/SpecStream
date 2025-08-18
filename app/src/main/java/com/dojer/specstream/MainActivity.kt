@@ -259,6 +259,46 @@ class MainActivity : AppCompatActivity() {
             (function() {
                 console.log('SpecStream: Starting TV UI cleanup...');
                 
+                // Auto-dismiss Spectrum connectivity modal in player WebView
+                var modalCheckInterval;
+                var modalDismissed = false;
+                
+                function checkAndDismissPlayerModal() {
+                    if (modalDismissed) return; // Stop if already dismissed
+                    
+                    // Look directly for modal dismiss buttons (no text detection needed)
+                    var modalSelectors = [
+                        '.kite-modal-accept-btn',
+                        '.kite-btn-primary[ng-click*="modalInstance.close"]',
+                        'button[ng-click*="modalInstance.close"]'
+                    ];
+                    
+                    for (var i = 0; i < modalSelectors.length; i++) {
+                        var btn = document.querySelector(modalSelectors[i]);
+                        if (btn && btn.offsetParent !== null && !btn.disabled) {
+                            console.log('SpecStream: Auto-dismissing connectivity modal in player:', modalSelectors[i]);
+                            btn.click();
+                            modalDismissed = true;
+                            clearInterval(modalCheckInterval);
+                            console.log('SpecStream: Player modal dismissed, checking stopped');
+                            return;
+                        }
+                    }
+                }
+                
+                // Check for modal immediately and frequently when page loads
+                setTimeout(checkAndDismissPlayerModal, 100); // Very fast initial check
+                setTimeout(checkAndDismissPlayerModal, 500); // Second quick check
+                modalCheckInterval = setInterval(checkAndDismissPlayerModal, 1000); // Then every second
+                
+                // Safety timeout - stop checking after 10 seconds if modal never appeared
+                setTimeout(function() {
+                    if (!modalDismissed) {
+                        clearInterval(modalCheckInterval);
+                        console.log('SpecStream: Player modal checking stopped (timeout)');
+                    }
+                }, 10000);
+
                 // Create a function that runs repeatedly to handle dynamic content
                 var cleanupInterval = setInterval(function() {
                     try {
@@ -694,47 +734,57 @@ class MainActivity : AppCompatActivity() {
             (function() {
                 console.log('SpecStream: Starting guide UI cleanup...');
                 
-                // Auto-dismiss Spectrum connectivity modal (only needed in guide WebView)
-                var CONNECTIVITY_MODAL_INDICATORS = [
-                    'Connect to Your Spectrum Internet for More to Watch',
-                    'Due to programming restrictions'
-                ];
+                // Auto-dismiss Spectrum connectivity modal in guide WebView
+                var guideModalInterval;
+                var guideModalDismissed = false;
                 
                 function checkAndDismissConnectivityModal() {
-                    var hasModal = CONNECTIVITY_MODAL_INDICATORS.some(function(text) {
-                        return document.body && document.body.textContent.includes(text);
-                    });
+                    if (guideModalDismissed) return; // Stop if already dismissed
                     
-                    if (!hasModal) return;
+                    // Look directly for modal dismiss buttons (no text detection needed)
+                    var modalSelectors = [
+                        '.kite-modal-accept-btn',
+                        '.kite-btn-primary[ng-click*="modalInstance.close"]',
+                        'button[ng-click*="modalInstance.close"]'
+                    ];
                     
-                    var buttons = document.querySelectorAll('button');
-                    buttons.forEach(function(btn) {
-                        if (btn.textContent.trim() === 'OK' && 
-                            btn.offsetParent !== null && 
-                            !btn.disabled) {
-                            console.log('SpecStream: Auto-dismissing connectivity modal in guide');
+                    for (var i = 0; i < modalSelectors.length; i++) {
+                        var btn = document.querySelector(modalSelectors[i]);
+                        if (btn && btn.offsetParent !== null && !btn.disabled) {
+                            console.log('SpecStream: Auto-dismissing connectivity modal in guide:', modalSelectors[i]);
                             btn.click();
-                            return; // Exit after first successful click
+                            guideModalDismissed = true;
+                            clearInterval(guideModalInterval);
+                            console.log('SpecStream: Guide modal dismissed, checking stopped');
+                            return;
                         }
-                    });
+                    }
                 }
                 
-                // Check immediately on guide load and then periodically  
+                // Check immediately on guide load and then more frequently 
                 setTimeout(function() {
                     try {
                         checkAndDismissConnectivityModal();
                     } catch (e) {
                         console.log('SpecStream: Error in initial connectivity modal check:', e);
                     }
-                }, 1000); // Initial check after 1 second
+                }, 100); // Much faster initial check
                 
-                setInterval(function() {
+                guideModalInterval = setInterval(function() {
                     try {
                         checkAndDismissConnectivityModal();
                     } catch (e) {
                         console.log('SpecStream: Error in periodic connectivity modal check:', e);
                     }
-                }, 3000); // Then every 3 seconds
+                }, 1000); // Check every second instead of 3 seconds
+                
+                // Safety timeout - stop checking after 10 seconds if modal never appeared
+                setTimeout(function() {
+                    if (!guideModalDismissed) {
+                        clearInterval(guideModalInterval);
+                        console.log('SpecStream: Guide modal checking stopped (timeout)');
+                    }
+                }, 10000);
                 
                 // Define channel click handler function
                 function channelClickHandler(event) {
