@@ -786,6 +786,29 @@ class MainActivity : AppCompatActivity() {
                     }
                 }, 10000);
                 
+                // Emergency broadcast alert dismissal (one-time check)
+                function checkAndDismissEmergencyAlert() {
+                    try {
+                        var emergencyCloseBtn = document.querySelector('div.si-x.button[aria-label="Close alert"]');
+                        if (emergencyCloseBtn && emergencyCloseBtn.offsetParent !== null) {
+                            console.log('SpecStream: Emergency broadcast alert detected, dismissing...');
+                            emergencyCloseBtn.click();
+                            console.log('SpecStream: Emergency alert dismissed successfully');
+                            return true;
+                        }
+                        return false;
+                    } catch (e) {
+                        console.log('SpecStream: Error checking for emergency alert:', e);
+                        return false;
+                    }
+                }
+                
+                // Check for emergency alert after 4 seconds (one-time only)
+                setTimeout(function() {
+                    checkAndDismissEmergencyAlert();
+                }, 4000);
+                
+                
                 // Define channel click handler function
                 function channelClickHandler(event) {
                     try {
