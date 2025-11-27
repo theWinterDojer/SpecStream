@@ -136,7 +136,7 @@ class MainActivity : AppCompatActivity() {
                 loadingProgress.visibility = View.GONE
                 Log.d("SpecStream", "Player loaded successfully")
                 
-                // Inject UI cleanup script for better TV experience
+                // Inject UI cleanup script with built-in login detection delay
                 injectUiCleanupScript()
                 
                 // Guide will be preloaded automatically via JavaScript when video is found
@@ -264,9 +264,14 @@ class MainActivity : AppCompatActivity() {
                 var modalDismissed = false;
                 
                 function checkAndDismissPlayerModal() {
-                    if (modalDismissed) return; // Stop if already dismissed
+                    if (modalDismissed) return;
                     
-                    // Look directly for modal dismiss buttons (no text detection needed)
+                    // Skip modal checking if on login page (password field exists)
+                    if (document.querySelector('input[type="password"]') !== null) {
+                        console.log('SpecStream: Login page active, skipping modal check');
+                        return;
+                    }
+                    
                     var modalSelectors = [
                         '.kite-modal-accept-btn',
                         '.kite-btn-primary[ng-click*="modalInstance.close"]',
@@ -286,12 +291,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 
-                // Check for modal immediately and frequently when page loads
-                setTimeout(checkAndDismissPlayerModal, 100); // Very fast initial check
-                setTimeout(checkAndDismissPlayerModal, 500); // Second quick check
-                modalCheckInterval = setInterval(checkAndDismissPlayerModal, 1000); // Then every second
+                // Start modal checking immediately, but it will skip while on login page
+                setTimeout(checkAndDismissPlayerModal, 100);
+                setTimeout(checkAndDismissPlayerModal, 500);
+                modalCheckInterval = setInterval(checkAndDismissPlayerModal, 1000);
                 
-                // Safety timeout - stop checking after 10 seconds if modal never appeared
                 setTimeout(function() {
                     if (!modalDismissed) {
                         clearInterval(modalCheckInterval);
@@ -299,75 +303,36 @@ class MainActivity : AppCompatActivity() {
                     }
                 }, 10000);
 
-                // Create a function that runs repeatedly to handle dynamic content
+                // Start passive cleanup immediately
                 var cleanupInterval = setInterval(function() {
                     try {
-                        // Accept initial prompts automatically (original lean selectors)
-                        var authButtons = [
-                            '.continue-button',
-                            '[aria-label*="Continue and accept"]',
-                            '.btn-success'
-                        ];
+                        // Skip auto-clicking if on login page
+                        var onLoginPage = document.querySelector('input[type="password"]') !== null;
                         
-                        // Try each selector safely
-                        authButtons.forEach(function(selector) {
+                        if (!onLoginPage) {
+                            // Accept initial prompts automatically
+                            var authButtons = [
+                                '.continue-button',
+                                '[aria-label*="Continue and accept"]',
+                                '.btn-success'
+                            ];
+                            
+                            authButtons.forEach(function(selector) {
+                                try {
+                                    var button = document.querySelector(selector);
+                                    if (button && button.offsetParent !== null) {
+                                        button.click();
+                                        console.log('SpecStream: Auto-clicked auth button:', selector);
+                                    }
+                                } catch (e) {}
+                            });
+                            
                             try {
-                                var button = document.querySelector(selector);
-                                if (button && button.offsetParent !== null) { // Check if visible
-                                    button.click();
-                                    console.log('SpecStream: Auto-clicked auth button:', selector);
+                                if (document.querySelector('.continue-button')?.childNodes?.length > 0) {
+                                    document.querySelector('.continue-button').childNodes[0].click();
+                                    console.log('SpecStream: Auto-clicked continue-button child node');
                                 }
-                            } catch (e) {
-                                // Silently continue if selector fails
-                            }
-                        });
-                        
-                        // Special handling for the original continue-button with child nodes
-                        try {
-                            if (document.querySelector('.continue-button')?.childNodes?.length > 0) {
-                                document.querySelector('.continue-button').childNodes[0].click();
-                                console.log('SpecStream: Auto-clicked continue-button child node');
-                            }
-                        } catch (e) {
-                            // Silently continue if this fails
-                        }
-                        
-                        // Check for login screen - prepare for D-pad login interface
-                        var loginIndicators = [
-                            'Sign In to Get Started',
-                            'Username',
-                            'Password',
-                            'input[type="password"]',
-                            'input[name="password"]',
-                            'input[name="username"]',
-                            '.login-form',
-                            '[data-testid*="login"]'
-                        ];
-                        
-                        var isLoginScreen = false;
-                        loginIndicators.forEach(function(indicator) {
-                            if (indicator.startsWith('.') || indicator.startsWith('[') || indicator.startsWith('input')) {
-                                // CSS selector
-                                if (document.querySelector(indicator)) {
-                                    isLoginScreen = true;
-                                }
-                            } else {
-                                // Text content
-                                if (document.body && document.body.textContent.includes(indicator)) {
-                                    isLoginScreen = true;
-                                }
-                            }
-                        });
-                        
-                        if (isLoginScreen) {
-                            // Check if cursor navigation is already active to prevent re-initialization
-                            if (!window.loginCursorState || !window.loginCursorState.active) {
-                                console.log('SpecStream: Login screen detected - enabling cursor navigation');
-                                // Enable cursor navigation immediately
-                                enableCursorLoginNavigation();
-                            } else {
-                                console.log('SpecStream: Login screen detected but cursor navigation already active');
-                            }
+                            } catch (e) {}
                         }
                         
                         // Hide desktop navigation elements
@@ -403,13 +368,20 @@ class MainActivity : AppCompatActivity() {
                             '.cast_caf_state_h'
                         ];
                         
+                        var hiddenControlsCount = 0;
                         videoControlsToHide.forEach(function(selector) {
                             var elements = document.querySelectorAll(selector);
                             elements.forEach(function(el) {
-                                el.style.visibility = 'hidden';
-                                console.log('SpecStream: Hidden video control element:', selector);
+                                if (el.style.visibility !== 'hidden') {
+                                    el.style.visibility = 'hidden';
+                                    hiddenControlsCount++;
+                                }
                             });
                         });
+                        
+                        if (hiddenControlsCount > 0) {
+                            console.log('SpecStream: Hidden ' + hiddenControlsCount + ' video control elements');
+                        }
                         
                         // Style video player for TV
                         var player = document.querySelector('#spectrum-player');
@@ -535,187 +507,114 @@ class MainActivity : AppCompatActivity() {
                     console.log('SpecStream: UI cleanup timeout reached');
                 }, 30000);
                 
-                // Simplified Login Navigation - Targeting Exact Spectrum Elements
+                // Login navigation setup function
                 window.enableCursorLoginNavigation = function() {
-                    console.log('SpecStream: Enabling simplified login navigation');
-                    
-                    // Check if already initialized to prevent duplicates
-                    if (window.loginCursorState && window.loginCursorState.active) {
-                        console.log('SpecStream: Cursor navigation already active, skipping initialization');
+                    // Only set up if on login page
+                    if (document.querySelector('input[type="password"]') === null) {
+                        console.log('SpecStream: Not on login page, skipping login navigation setup');
                         return;
                     }
                     
-                    // Target exact Spectrum login elements
+                    console.log('SpecStream: Setting up login D-pad navigation');
+                    if (window.loginCursorState && window.loginCursorState.active) return;
+                    
                     var usernameField = document.querySelector('#kite-label-input-4');
-                    var passwordField = document.querySelector('#kite-label-input-6');
-                    var staySignedInCheckbox = document.querySelector('input[type="checkbox"]');
-                    // Target the actual clickable button, not the inner span
+                        var passwordField = document.querySelector('#kite-label-input-6');
+                        var staySignedInCheckbox = document.querySelector('input[type="checkbox"]');
                     var signInButton = document.querySelector('#signInBtn button[type="submit"]') || 
                                       document.querySelector('button[type="submit"].kite-button--primary') ||
                                       document.querySelector('button[type="submit"]');
                     
-                    console.log('SpecStream: Username field found:', !!usernameField);
-                    console.log('SpecStream: Password field found:', !!passwordField);
-                    console.log('SpecStream: Stay signed in checkbox found:', !!staySignedInCheckbox);
-                    console.log('SpecStream: Sign in button found:', !!signInButton);
-                    
                     if (usernameField && passwordField && signInButton) {
-                        console.log('SpecStream: All required login elements found, setting up navigation');
-                        
-                        // Create simplified navigation with only the essential elements
                         window.loginCursorState = {
                             elements: [usernameField, passwordField, signInButton],
                             currentIndex: 0,
                             active: true
                         };
                         
-                        // Add checkbox if found (optional element)
                         if (staySignedInCheckbox) {
-                            // Insert checkbox before sign in button
                             window.loginCursorState.elements.splice(2, 0, staySignedInCheckbox);
-                            console.log('SpecStream: Added stay signed in checkbox to navigation');
                         }
                         
-                        console.log('SpecStream: Navigation setup with', window.loginCursorState.elements.length, 'elements');
-                        
-                        // Style all navigable elements for consistent appearance
-                        window.loginCursorState.elements.forEach(function(element, index) {
-                            // Remove any existing border/highlighting from all elements
-                            element.style.border = '';
-                            element.style.outline = 'none';
-                            element.style.boxShadow = 'none';
-                            
-                            if (element.tagName.toLowerCase() === 'input') {
-                                element.style.fontSize = '18px';
-                                element.style.padding = '12px';
-                                element.style.borderRadius = '6px';
-                            } else if (element.tagName.toLowerCase() === 'button') {
-                                // Style for button elements
-                                element.style.fontSize = '16px';
-                                element.style.borderRadius = '6px';
-                            }
-                            
-                            // Prevent automatic focus changes that cause snap-back
-                            element.setAttribute('tabindex', '-1');
-                            
-                            console.log('SpecStream: Styled element', index, ':', element.tagName, element.className || 'no-class');
+                        window.loginCursorState.elements.forEach(function(el) {
+                            el.setAttribute('tabindex', '-1');
                         });
                         
-                        // No automatic focus management - cursor only moves via D-pad navigation
-                        // This ensures the cursor stays exactly where the user puts it
+                        window.loginCursorState.elements[0].focus();
                         
-                        // Focus the first element to show native cursor
-                        if (window.loginCursorState.elements.length > 0) {
-                            window.loginCursorState.elements[0].focus();
-                        }
-                        
-                        // Notify Android that login interface is active
                         if (typeof SpecStream !== 'undefined') {
                             SpecStream.setLoginInterfaceActive(true);
                         }
-                        
-                        console.log('SpecStream: Cursor navigation enabled successfully');
-                    } else {
-                        console.log('SpecStream: Could not find login form fields');
                     }
                 };
                 
-
-                
-
-                
                 window.handleLoginNavigation = function(direction) {
-                    console.log('SpecStream: handleLoginNavigation called with direction:', direction);
-                    
-                    if (!window.loginCursorState) {
-                        console.log('SpecStream: No loginCursorState found');
-                        return;
-                    }
-                    
-                    if (!window.loginCursorState.active) {
-                        console.log('SpecStream: loginCursorState not active');
-                        return;
-                    }
-                    
-                    console.log('SpecStream: Current cursor index:', window.loginCursorState.currentIndex, 
-                               'of', window.loginCursorState.elements.length, 'elements');
+                    if (!window.loginCursorState || !window.loginCursorState.active) return;
                     
                     switch (direction) {
                         case 'UP':
                             if (window.loginCursorState.currentIndex > 0) {
                                 window.loginCursorState.currentIndex--;
-                                console.log('SpecStream: Moved cursor UP to index:', window.loginCursorState.currentIndex);
-                                // Focus the new element to show native cursor
                                 window.loginCursorState.elements[window.loginCursorState.currentIndex].focus();
-                            } else {
-                                console.log('SpecStream: Cannot move UP - already at first element');
                             }
                             break;
-                            
                         case 'DOWN':
                             if (window.loginCursorState.currentIndex < window.loginCursorState.elements.length - 1) {
                                 window.loginCursorState.currentIndex++;
-                                console.log('SpecStream: Moved cursor DOWN to index:', window.loginCursorState.currentIndex);
-                                // Focus the new element to show native cursor
                                 window.loginCursorState.elements[window.loginCursorState.currentIndex].focus();
-                            } else {
-                                console.log('SpecStream: Cannot move DOWN - already at last element');
                             }
                             break;
-                            
                         case 'SELECT':
-                            var currentElement = window.loginCursorState.elements[window.loginCursorState.currentIndex];
-                            console.log('SpecStream: Selecting element:', currentElement.tagName, currentElement.type || 'no-type', currentElement.className);
-                            
-                            if (currentElement.tagName.toLowerCase() === 'input') {
-                                if (currentElement.type === 'checkbox') {
-                                    console.log('SpecStream: Toggling stay signed in checkbox');
-                                    // Simple checkbox toggle
-                                    currentElement.checked = !currentElement.checked;
-                                    // Dispatch change event so form recognizes the change
-                                    var changeEvent = new Event('change', { bubbles: true });
-                                    currentElement.dispatchEvent(changeEvent);
+                            var el = window.loginCursorState.elements[window.loginCursorState.currentIndex];
+                            if (el.tagName.toLowerCase() === 'input') {
+                                if (el.type === 'checkbox') {
+                                    el.checked = !el.checked;
+                                    el.dispatchEvent(new Event('change', { bubbles: true }));
                                 } else {
-                                    console.log('SpecStream: Activating input field for keyboard');
-                                    // Only focus - avoid click which can trigger form submission behavior
-                                    currentElement.focus();
+                                    el.focus();
                                 }
-                            } else if (currentElement.tagName.toLowerCase() === 'button') {
-                                console.log('SpecStream: Clicking sign in button');
-                                currentElement.click();
-                            } else {
-                                console.log('SpecStream: Clicking element (fallback)');
-                                currentElement.click();
+                            } else if (el.tagName.toLowerCase() === 'button') {
+                                el.click();
                             }
-                            break;
-                            
-                        default:
-                            console.log('SpecStream: Unknown navigation direction:', direction);
                             break;
                     }
                 };
                 
                 window.cancelLogin = function() {
-                    console.log('SpecStream: Canceling login interface');
-                    
-                    // Disable cursor navigation
                     if (window.loginCursorState) {
                         window.loginCursorState.active = false;
                     }
-                    
-                    // Notify Android that login interface is no longer active
                     if (typeof SpecStream !== 'undefined') {
                         SpecStream.setLoginInterfaceActive(false);
                     }
                 };
                 
-                // Add global functions for D-pad navigation
+                // Check for login page periodically and enable navigation
+                var loginCheckInterval = setInterval(function() {
+                    var passwordField = document.querySelector('input[type="password"]');
+                    
+                    if (passwordField !== null) {
+                        // Still on login page - enable navigation if not already active
+                        if (!window.loginCursorState || !window.loginCursorState.active) {
+                            enableCursorLoginNavigation();
+                        }
+                    } else {
+                        // Password field is gone - check if login was successful
+                        if (window.loginCursorState && window.loginCursorState.active) {
+                            // We had active login navigation, but now password field is gone
+                            // This means login was successful!
+                            console.log('SpecStream: Login successful, cleaning up and stopping login check');
+                            window.cancelLogin(); // Clean up login state
+                            clearInterval(loginCheckInterval);
+                        }
+                    }
+                }, 1500);
+                
+                // Global function for D-pad navigation
                 window.toggleGuide = function(action) {
                     console.log('SpecStream: toggleGuide called with:', action);
                     if (typeof SpecStream !== 'undefined') {
                         SpecStream.channelGuide(action);
-                    } else {
-                        console.log('SpecStream: SpecStream interface not found');
                     }
                 };
                 
@@ -1158,10 +1057,35 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         playerWebView.onResume()
         guideWebView.onResume()
+        
+        // Resume video playback if it was playing before pause
+        playerWebView.evaluateJavascript("""
+            if (window.wasPlayingBeforePause) {
+                var video = document.querySelector('video');
+                if (video && video.paused) {
+                    video.play();
+                    console.log('SpecStream: Resumed video playback');
+                }
+                window.wasPlayingBeforePause = false;
+            }
+        """.trimIndent(), null)
     }
     
     override fun onPause() {
         super.onPause()
+        
+        // Pause video playback when app goes to background (Home button)
+        playerWebView.evaluateJavascript("""
+            var video = document.querySelector('video');
+            if (video && !video.paused) {
+                video.pause();
+                window.wasPlayingBeforePause = true;
+                console.log('SpecStream: Paused video for background');
+            } else {
+                window.wasPlayingBeforePause = false;
+            }
+        """.trimIndent(), null)
+        
         playerWebView.onPause()
         guideWebView.onPause()
     }
