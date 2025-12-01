@@ -88,6 +88,13 @@ class MainActivity : AppCompatActivity() {
         playerWebView.addJavascriptInterface(this, "SpecStream")
         guideWebView.addJavascriptInterface(this, "SpecStream")
         
+        // Enable cookie persistence for better session handling
+        CookieManager.getInstance().apply {
+            setAcceptCookie(true)
+            setAcceptThirdPartyCookies(playerWebView, true)
+            setAcceptThirdPartyCookies(guideWebView, true)
+        }
+        
         Log.d("SpecStream", "Activity setup complete - ready for D-pad events")
     }
     
@@ -183,9 +190,10 @@ class MainActivity : AppCompatActivity() {
         
         configureWebViewSettings(guideWebView)
         
-        // 🔥 CRITICAL PERFORMANCE OPTIMIZATIONS
+        // Performance optimizations for TV display
         guideWebView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-        guideWebView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null)
+        // Use hardware acceleration for smoother rendering
+        guideWebView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
         
         // Set WebView client for guide
         guideWebView.webViewClient = object : WebViewClient() {
@@ -221,8 +229,9 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             
-            // KEEP: These improve performance and caching
-            cacheMode = WebSettings.LOAD_DEFAULT
+            // Enable caching to avoid re-downloading resources
+            cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            databaseEnabled = true
             
             // REMOVED: These zoom/viewport settings can interfere with video streaming
             // setSupportZoom(true)
@@ -302,6 +311,17 @@ class MainActivity : AppCompatActivity() {
                         console.log('SpecStream: Player modal checking stopped (timeout)');
                     }
                 }, 10000);
+
+                // Preload guide early if user is authenticated (not on login page)
+                setTimeout(function() {
+                    if (document.querySelector('input[type="password"]') === null) {
+                        // Not on login page - user is authenticated
+                        console.log('SpecStream: User authenticated, preloading guide for instant access');
+                        if (typeof SpecStream !== 'undefined') {
+                            SpecStream.preloadGuide();
+                        }
+                    }
+                }, 3000); // Wait 3 seconds after page load to avoid competing with initial page resources
 
                 // Start passive cleanup immediately
                 var cleanupInterval = setInterval(function() {
@@ -777,7 +797,7 @@ class MainActivity : AppCompatActivity() {
                     } catch (e) {
                         console.log('SpecStream: Error in guide cleanup:', e);
                     }
-                }, 2000);
+                }, 500); // Check every 500ms for faster guide interactivity
                 
                 // Stop cleanup after 15 seconds
                 setTimeout(function() {
@@ -961,8 +981,8 @@ class MainActivity : AppCompatActivity() {
                 // Save the new channel for memory
                 saveLastChannel(channelId)
                 
+                // Hide guide and return to video
                 guideWebView.visibility = View.GONE
-                guideWebView.evaluateJavascript("history.back();", null)
             }
         } catch (e: Exception) {
             Log.e("SpecStream", "Error in channel navigation: $e")
