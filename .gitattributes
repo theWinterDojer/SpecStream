@@ -1,0 +1,6 @@
+# Normalize text files to LF to avoid cross-platform EOL churn.
+* text=auto eol=lf
+
+# Keep Windows batch scripts with CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
