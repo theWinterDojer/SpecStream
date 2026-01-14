@@ -11,6 +11,8 @@ images/
 .externalNativeBuild
 .cxx
 PROJECT_OVERVIEW.md
+currentStatus.md
+agents.md
 *.code-workspace
 
 # Logs
