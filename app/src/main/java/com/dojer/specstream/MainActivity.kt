@@ -35,8 +35,8 @@ class MainActivity : AppCompatActivity() {
         "medallia.com"
     )
     
-    // Modern desktop Chrome user agent for better compatibility
-    private val desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    // Modern desktop user agent for better compatibility
+    private val desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
     
     // Track guide states for D-pad navigation
     private var guideLoaded = false
