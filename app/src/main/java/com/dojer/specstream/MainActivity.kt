@@ -17,6 +17,9 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import androidx.core.view.isGone
+import androidx.webkit.UserAgentMetadata
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 
 import java.io.ByteArrayInputStream
 
@@ -35,8 +38,13 @@ class MainActivity : AppCompatActivity() {
         "medallia.com"
     )
 
-    private val fallbackDesktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    private val desktopUserAgent: String by lazy { resolveDesktopUserAgent() }
+    private val fallbackDesktopChromeVersion = "120.0.0.0"
+    private val minimumDesktopChromeMajor = 142
+    private val minimumDesktopChromeVersion = "142.0.0.0"
+    private val desktopChromeVersion: String by lazy { resolveDesktopChromeVersion() }
+    private val desktopUserAgent: String by lazy { buildDesktopUserAgent(desktopChromeVersion) }
+
+    private var userAgentDiagnosticsLogged = false
 
     // Track guide states for D-pad navigation
     private var guideLoaded = false
@@ -172,6 +180,8 @@ class MainActivity : AppCompatActivity() {
                 
                 // Inject UI cleanup script with built-in login detection delay
                 injectUiCleanupScript()
+
+                logUserAgentDiagnostics()
                 
                 // Guide will be preloaded automatically via JavaScript when video is found
             }
@@ -288,6 +298,7 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             userAgentString = desktopUserAgent
+            applyUserAgentMetadata(webView, desktopChromeVersion)
             mediaPlaybackRequiresUserGesture = false
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             
@@ -307,20 +318,129 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun resolveDesktopUserAgent(): String {
+    private fun buildDesktopUserAgent(version: String): String {
+        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$version Safari/537.36"
+    }
+
+    private fun resolveDesktopChromeVersion(): String {
         return try {
             val webViewPackage = WebView.getCurrentWebViewPackage()
             val versionName = webViewPackage?.versionName
-            if (versionName.isNullOrBlank()) {
-                Log.w("SpecStream", "WebView version unavailable, using fallback UA")
-                fallbackDesktopUserAgent
+            val candidateVersion = if (versionName.isNullOrBlank()) {
+                Log.w("SpecStream", "WebView version unavailable, using fallback UA $fallbackDesktopChromeVersion")
+                fallbackDesktopChromeVersion
             } else {
                 Log.d("SpecStream", "Using WebView version for UA: $versionName")
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$versionName Safari/537.36"
+                versionName
             }
+            val majorVersion = candidateVersion.substringBefore('.').toIntOrNull()
+            if (majorVersion == null) {
+                Log.w(
+                    "SpecStream",
+                    "WebView version malformed ($candidateVersion), using minimum UA $minimumDesktopChromeVersion"
+                )
+                return minimumDesktopChromeVersion
+            }
+            if (majorVersion < minimumDesktopChromeMajor) {
+                Log.w(
+                    "SpecStream",
+                    "WebView version $candidateVersion below minimum $minimumDesktopChromeMajor, using $minimumDesktopChromeVersion"
+                )
+                return minimumDesktopChromeVersion
+            }
+            candidateVersion
         } catch (e: Exception) {
             Log.w("SpecStream", "Failed to resolve WebView version for UA: ${e.message}")
-            fallbackDesktopUserAgent
+            minimumDesktopChromeVersion
+        }
+    }
+
+    private fun applyUserAgentMetadata(webView: WebView, version: String) {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.USER_AGENT_METADATA)) {
+            Log.d("SpecStream", "User agent metadata not supported by this WebView")
+            return
+        }
+
+        val majorVersion = version.substringBefore('.').toIntOrNull()
+        if (majorVersion == null) {
+            Log.w("SpecStream", "User agent metadata skipped: invalid version $version")
+            return
+        }
+
+        val major = majorVersion.toString()
+        val brands = listOf(
+            UserAgentMetadata.BrandVersion.Builder()
+                .setBrand("Not A;Brand")
+                .setMajorVersion("99")
+                .setFullVersion("99.0.0.0")
+                .build(),
+            UserAgentMetadata.BrandVersion.Builder()
+                .setBrand("Chromium")
+                .setMajorVersion(major)
+                .setFullVersion(version)
+                .build(),
+            UserAgentMetadata.BrandVersion.Builder()
+                .setBrand("Google Chrome")
+                .setMajorVersion(major)
+                .setFullVersion(version)
+                .build()
+        )
+
+        val metadata = UserAgentMetadata.Builder()
+            .setBrandVersionList(brands)
+            .setFullVersion(version)
+            .setPlatform("Windows")
+            .setPlatformVersion("10.0")
+            .setMobile(false)
+            .build()
+
+        WebSettingsCompat.setUserAgentMetadata(webView.settings, metadata)
+        Log.d("SpecStream", "Applied user agent metadata for Chrome $version")
+    }
+
+    private fun logUserAgentDiagnostics() {
+        if (userAgentDiagnosticsLogged) return
+        userAgentDiagnosticsLogged = true
+
+        val script = """
+            (function() {
+                if (window.__specStreamUaLogged) {
+                    return "SKIP";
+                }
+                window.__specStreamUaLogged = true;
+                var payload = {
+                    ua: navigator.userAgent,
+                    platform: navigator.platform || null,
+                    uaData: null
+                };
+                if (navigator.userAgentData) {
+                    payload.uaData = {
+                        brands: navigator.userAgentData.brands || null,
+                        mobile: navigator.userAgentData.mobile,
+                        platform: navigator.userAgentData.platform
+                    };
+                    navigator.userAgentData.getHighEntropyValues([
+                        "platform",
+                        "platformVersion",
+                        "uaFullVersion",
+                        "fullVersionList",
+                        "architecture",
+                        "bitness",
+                        "model",
+                        "mobile"
+                    ]).then(function(values) {
+                        console.log("SpecStream: UA-CH " + JSON.stringify(values));
+                    }).catch(function(error) {
+                        console.log("SpecStream: UA-CH error " + error);
+                    });
+                }
+                console.log("SpecStream: UA diag " + JSON.stringify(payload));
+                return JSON.stringify(payload);
+            })();
+        """.trimIndent()
+
+        playerWebView.evaluateJavascript(script) { result ->
+            Log.d("SpecStream", "UA diagnostics result: $result")
         }
     }
     
