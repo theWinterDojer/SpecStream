@@ -34,10 +34,10 @@ class MainActivity : AppCompatActivity() {
         "online-metrix.net",
         "medallia.com"
     )
-    
-    // Modern desktop Chrome user agent for better compatibility
-    private val desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    
+
+    private val fallbackDesktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    private val desktopUserAgent: String by lazy { resolveDesktopUserAgent() }
+
     // Track guide states for D-pad navigation
     private var guideLoaded = false
     
@@ -131,7 +131,15 @@ class MainActivity : AppCompatActivity() {
         
         // Check if WebView is available
         try {
-            WebView.getCurrentWebViewPackage()
+            val webViewPackage = WebView.getCurrentWebViewPackage()
+            if (webViewPackage == null) {
+                Log.w("SpecStream", "WebView package info unavailable")
+            } else {
+                Log.d(
+                    "SpecStream",
+                    "WebView package: ${webViewPackage.packageName} ${webViewPackage.versionName}"
+                )
+            }
         } catch (e: Exception) {
             Log.e("SpecStream", "WebView not available: ${e.message}")
             throw Exception("WebView not available on this device")
@@ -141,6 +149,7 @@ class MainActivity : AppCompatActivity() {
         playerWebView.setBackgroundColor(android.graphics.Color.BLACK)
         
         configureWebViewSettings(playerWebView)
+        Log.d("SpecStream", "WebView active UA: ${playerWebView.settings.userAgentString}")
         playerWebView.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, true)
         Log.d("SpecStream", "Renderer priority policy set for player WebView")
         
@@ -295,6 +304,23 @@ class MainActivity : AppCompatActivity() {
             // REMOVED: File access not needed for streaming, potential security issue
             // allowFileAccess = true
             // allowContentAccess = true
+        }
+    }
+
+    private fun resolveDesktopUserAgent(): String {
+        return try {
+            val webViewPackage = WebView.getCurrentWebViewPackage()
+            val versionName = webViewPackage?.versionName
+            if (versionName.isNullOrBlank()) {
+                Log.w("SpecStream", "WebView version unavailable, using fallback UA")
+                fallbackDesktopUserAgent
+            } else {
+                Log.d("SpecStream", "Using WebView version for UA: $versionName")
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/$versionName Safari/537.36"
+            }
+        } catch (e: Exception) {
+            Log.w("SpecStream", "Failed to resolve WebView version for UA: ${e.message}")
+            fallbackDesktopUserAgent
         }
     }
     
